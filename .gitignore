@@ -1,0 +1,34 @@
+# Dados, modelos e logs — nunca vão para o repo
+datasets/
+models/
+logs/
+results/
+venvs/
+
+# Ficheiros grandes
+*.pkl
+*.pt
+*.pth
+*.tar.gz
+*.zip
+*.h5
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+
+# Config local (contém paths específicos de cada utilizador)
+.config
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
