@@ -1,9 +1,9 @@
-# Dados, modelos e logs — nunca vão para o repo
-datasets/
-models/
-logs/
-results/
-venvs/
+# Pastas de dados dos projetos (nunca vão para o GitHub)
+projects/*/datasets/
+projects/*/models/
+projects/*/logs/
+projects/*/results/
+projects/*/venvs/
 
 # Ficheiros grandes
 *.pkl
