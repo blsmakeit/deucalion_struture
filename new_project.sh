@@ -39,19 +39,10 @@ if [[ "$TYPE" != "ml" && "$TYPE" != "simulation" ]]; then
     exit 1
 fi
 
-# --- Carregar configuração ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG="$SCRIPT_DIR/.config"
-
-if [ ! -f "$CONFIG" ]; then
-    echo "Erro: ficheiro .config não encontrado."
-    echo "Corre primeiro: ./setup.sh"
-    exit 1
-fi
-
-source "$CONFIG"
-
+# --- Paths ---
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$REPO_DIR/templates/$TYPE"
+PROJECT_DIR="$REPO_DIR/projects/$PROJECT"
 
 if [ ! -d "$TEMPLATE_DIR" ]; then
     echo "Erro: templates não encontrados em $TEMPLATE_DIR"
