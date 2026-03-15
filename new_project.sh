@@ -5,13 +5,13 @@
 # Uso:
 #   ./new_project.sh <nome_projeto> <tipo>
 #
-# Tipos disponíveis:
+# Tipos:
 #   ml          — treino e inferência de modelos
 #   simulation  — simulações numéricas
 #
 # Exemplos:
-#   ./new_project.sh cancer_detection ml
-#   ./new_project.sh fluid_dynamics simulation
+#   ./new_project.sh iris_classification ml
+#   ./new_project.sh heat_diffusion simulation
 # =============================================================
 
 set -e
@@ -21,13 +21,13 @@ if [ $# -lt 2 ]; then
     echo ""
     echo "Uso: ./new_project.sh <nome_projeto> <tipo>"
     echo ""
-    echo "Tipos:"
+    echo "Tipos disponíveis:"
     echo "  ml          — treino e inferência de modelos"
     echo "  simulation  — simulações numéricas"
     echo ""
     echo "Exemplos:"
-    echo "  ./new_project.sh cancer_detection ml"
-    echo "  ./new_project.sh fluid_dynamics simulation"
+    echo "  ./new_project.sh iris_classification ml"
+    echo "  ./new_project.sh heat_diffusion simulation"
     exit 1
 fi
 
@@ -44,9 +44,15 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$REPO_DIR/templates/$TYPE"
 PROJECT_DIR="$REPO_DIR/projects/$PROJECT"
 
+# Verificar templates
 if [ ! -d "$TEMPLATE_DIR" ]; then
     echo "Erro: templates não encontrados em $TEMPLATE_DIR"
-    echo "Verifica se o REPO_DIR no .config está correto: $REPO_DIR"
+    exit 1
+fi
+
+# Verificar se projeto já existe
+if [ -d "$PROJECT_DIR" ]; then
+    echo "Erro: projeto '$PROJECT' já existe em $PROJECT_DIR"
     exit 1
 fi
 
@@ -54,90 +60,149 @@ echo ""
 echo "============================================="
 echo "  A criar projeto: $PROJECT"
 echo "  Tipo:            $TYPE"
-echo "  Utilizador:      $USERNAME"
+echo "  Localização:     $PROJECT_DIR"
 echo "============================================="
 
 # --- 1. Criar estrutura de pastas ---
 echo ""
-echo "[1/3] A criar pastas..."
-mkdir -p "$WORKSPACE/datasets/$PROJECT"
-mkdir -p "$WORKSPACE/models/$PROJECT"
-mkdir -p "$WORKSPACE/logs/$PROJECT"
-mkdir -p "$WORKSPACE/results/$PROJECT"
+echo "[1/4] A criar estrutura de pastas..."
+mkdir -p "$PROJECT_DIR/scripts"
+mkdir -p "$PROJECT_DIR/jobs"
+mkdir -p "$PROJECT_DIR/datasets"
+mkdir -p "$PROJECT_DIR/models"
+mkdir -p "$PROJECT_DIR/logs"
+mkdir -p "$PROJECT_DIR/results"
+mkdir -p "$PROJECT_DIR/venvs"
 echo "      OK"
 
-# --- 2. Criar venv e instalar packages ---
+# --- 2. Criar .gitignore do projeto ---
 echo ""
-echo "[2/3] A criar ambiente virtual e instalar packages..."
+echo "[2/4] A criar .gitignore..."
+cat > "$PROJECT_DIR/.gitignore" << 'GITIGNORE'
+datasets/
+models/
+logs/
+results/
+venvs/
+__pycache__/
+*.pyc
+*.pkl
+*.pt
+*.pth
+*.h5
+*.tar.gz
+*.zip
+.env
+GITIGNORE
+echo "      OK"
+
+# --- 3. Criar venv e instalar packages ---
+echo ""
+echo "[3/4] A criar venv e instalar packages..."
 echo "      (pode demorar 2-3 minutos)"
-echo ""
 
 module load Python/3.11.3-GCCcore-12.3.0 2>/dev/null || \
-module load python/3.10 2>/dev/null || \
-echo "AVISO: não foi possível carregar módulo Python — a usar Python do sistema"
+    echo "      AVISO: module load não disponível — a usar Python do sistema"
 
-VENV_DIR="$WORKSPACE/venvs/$PROJECT"
-python3 -m venv "$VENV_DIR"
-source "$VENV_DIR/bin/activate"
-
+python3 -m venv "$PROJECT_DIR/venvs/$PROJECT"
+source "$PROJECT_DIR/venvs/$PROJECT/bin/activate"
 pip install --quiet --upgrade pip
 pip install --quiet -r "$TEMPLATE_DIR/requirements.txt"
-
-# Guardar requirements no venv para referência futura
-cp "$TEMPLATE_DIR/requirements.txt" "$VENV_DIR/requirements.txt"
-
+cp "$TEMPLATE_DIR/requirements.txt" "$PROJECT_DIR/venvs/requirements.txt"
 deactivate
-echo "      Venv criado em: $VENV_DIR"
+echo "      OK — venv em: $PROJECT_DIR/venvs/$PROJECT"
 
-# --- 3. Copiar e personalizar scripts e jobs ---
+# --- 4. Copiar e personalizar templates ---
 echo ""
-echo "[3/3] A copiar e configurar scripts e jobs..."
+echo "[4/4] A copiar e configurar scripts e jobs..."
 
 if [ "$TYPE" == "ml" ]; then
 
-    # Scripts
-    TRAIN_SCRIPT="$WORKSPACE/scripts/${PROJECT}_train.py"
-    INFER_SCRIPT="$WORKSPACE/scripts/${PROJECT}_infer.py"
-    cp "$TEMPLATE_DIR/train_template.py" "$TRAIN_SCRIPT"
-    cp "$TEMPLATE_DIR/infer_template.py" "$INFER_SCRIPT"
+    cp "$TEMPLATE_DIR/train_template.py" "$PROJECT_DIR/scripts/train.py"
+    cp "$TEMPLATE_DIR/infer_template.py" "$PROJECT_DIR/scripts/infer.py"
 
-    for SCRIPT in "$TRAIN_SCRIPT" "$INFER_SCRIPT"; do
+    for SCRIPT in "$PROJECT_DIR/scripts/train.py" "$PROJECT_DIR/scripts/infer.py"; do
         sed -i "s/PROJECT_NAME/$PROJECT/g"       "$SCRIPT"
-        sed -i "s|WORKSPACE_PATH|$WORKSPACE|g"   "$SCRIPT"
+        sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$SCRIPT"
     done
 
-    # Jobs
-    CPU_JOB="$WORKSPACE/jobs/${PROJECT}_train_cpu.sh"
-    GPU_JOB="$WORKSPACE/jobs/${PROJECT}_train_gpu.sh"
-    cp "$TEMPLATE_DIR/job_train_cpu.sh" "$CPU_JOB"
-    cp "$TEMPLATE_DIR/job_train_gpu.sh" "$GPU_JOB"
+    cp "$TEMPLATE_DIR/job_train_cpu.sh" "$PROJECT_DIR/jobs/train_cpu.sh"
+    cp "$TEMPLATE_DIR/job_train_gpu.sh" "$PROJECT_DIR/jobs/train_gpu.sh"
 
-    for JOB in "$CPU_JOB" "$GPU_JOB"; do
-        sed -i "s/PROJECT_NAME/$PROJECT/g"         "$JOB"
-        sed -i "s|WORKSPACE_PATH|$WORKSPACE|g"     "$JOB"
-        sed -i "s/DEUCALION_USER/$USERNAME/g"      "$JOB"
-        sed -i "s/DEUCALION_PROJECT_ID/$PROJECT_ID/g" "$JOB"
+    for JOB in "$PROJECT_DIR/jobs/train_cpu.sh" "$PROJECT_DIR/jobs/train_gpu.sh"; do
+        sed -i "s/PROJECT_NAME/$PROJECT/g"       "$JOB"
+        sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$JOB"
     done
 
 elif [ "$TYPE" == "simulation" ]; then
 
-    # Script
-    SIM_SCRIPT="$WORKSPACE/scripts/${PROJECT}_sim.py"
-    cp "$TEMPLATE_DIR/sim_template.py" "$SIM_SCRIPT"
-    sed -i "s/PROJECT_NAME/$PROJECT/g"       "$SIM_SCRIPT"
-    sed -i "s|WORKSPACE_PATH|$WORKSPACE|g"   "$SIM_SCRIPT"
+    cp "$TEMPLATE_DIR/sim_template.py" "$PROJECT_DIR/scripts/sim.py"
+    sed -i "s/PROJECT_NAME/$PROJECT/g"       "$PROJECT_DIR/scripts/sim.py"
+    sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$PROJECT_DIR/scripts/sim.py"
 
-    # Job
-    SIM_JOB="$WORKSPACE/jobs/${PROJECT}_sim.sh"
-    cp "$TEMPLATE_DIR/job_sim_cpu.sh" "$SIM_JOB"
-    sed -i "s/PROJECT_NAME/$PROJECT/g"              "$SIM_JOB"
-    sed -i "s|WORKSPACE_PATH|$WORKSPACE|g"          "$SIM_JOB"
-    sed -i "s/DEUCALION_USER/$USERNAME/g"           "$SIM_JOB"
-    sed -i "s/DEUCALION_PROJECT_ID/$PROJECT_ID/g"   "$SIM_JOB"
+    cp "$TEMPLATE_DIR/job_sim_cpu.sh" "$PROJECT_DIR/jobs/sim_cpu.sh"
+    sed -i "s/PROJECT_NAME/$PROJECT/g"       "$PROJECT_DIR/jobs/sim_cpu.sh"
+    sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$PROJECT_DIR/jobs/sim_cpu.sh"
 
 fi
-
 echo "      OK"
+
+# --- README do projeto ---
+cat > "$PROJECT_DIR/README.md" << README
+# $PROJECT
+
+Tipo: $TYPE
+Criado: $(date '+%Y-%m-%d')
+Utilizador: $USER
+
+## Descrição
+TODO: descrever o projeto
+
+## Estrutura
+\`\`\`
+$PROJECT/
+├── scripts/     <- código do projeto
+├── jobs/        <- job scripts SLURM
+├── datasets/    <- dados (não vai para GitHub)
+├── models/      <- modelos treinados (não vai para GitHub)
+├── logs/        <- logs SLURM (não vai para GitHub)
+└── results/     <- resultados (não vai para GitHub)
+\`\`\`
+
+## Como correr
+
+### Enviar dados (do PC/WSL)
+\`\`\`bash
+scp dados.csv deucalion:$PROJECT_DIR/datasets/
+\`\`\`
+
+### Submeter job (no Deucalion)
+README
+
+if [ "$TYPE" == "ml" ]; then
+cat >> "$PROJECT_DIR/README.md" << README
+\`\`\`bash
+sbatch $PROJECT_DIR/jobs/train_cpu.sh
+sbatch $PROJECT_DIR/jobs/train_gpu.sh
+\`\`\`
+
+### Descarregar modelo (do PC/WSL)
+\`\`\`bash
+scp -r deucalion:$PROJECT_DIR/models/ ./
+\`\`\`
+README
+elif [ "$TYPE" == "simulation" ]; then
+cat >> "$PROJECT_DIR/README.md" << README
+\`\`\`bash
+sbatch $PROJECT_DIR/jobs/sim_cpu.sh
+\`\`\`
+
+### Descarregar resultados (do PC/WSL)
+\`\`\`bash
+scp -r deucalion:$PROJECT_DIR/results/ ./
+\`\`\`
+README
+fi
 
 # --- Resumo final ---
 echo ""
@@ -145,60 +210,31 @@ echo "============================================="
 echo "  Projeto '$PROJECT' criado com sucesso!"
 echo "============================================="
 echo ""
-echo "Estrutura criada:"
-echo "  ~/ml/datasets/$PROJECT/    <- coloca os dados aqui"
-echo "  ~/ml/models/$PROJECT/      <- modelos treinados"
-echo "  ~/ml/logs/$PROJECT/        <- logs do SLURM"
-echo "  ~/ml/results/$PROJECT/     <- resultados e métricas"
-echo ""
-
-if [ "$TYPE" == "ml" ]; then
-echo "Scripts:"
-echo "  ~/ml/scripts/${PROJECT}_train.py"
-echo "  ~/ml/scripts/${PROJECT}_infer.py"
-echo ""
-echo "Jobs:"
-echo "  ~/ml/jobs/${PROJECT}_train_cpu.sh   <- treino em CPU"
-echo "  ~/ml/jobs/${PROJECT}_train_gpu.sh   <- treino em GPU (mais rápido)"
+echo "Localização: $PROJECT_DIR"
 echo ""
 echo "Próximos passos:"
 echo ""
-echo "  1. Enviar dados (do teu PC/WSL):"
-echo "     scp dados.csv deucalion:~/ml/datasets/$PROJECT/"
+echo "  1. Push para GitHub:"
+echo "     git add projects/$PROJECT/"
+echo "     git commit -m 'projeto: $PROJECT'"
+echo "     git push origin $PROJECT"
 echo ""
-echo "  2. Submeter job de treino (CPU):"
-echo "     sbatch ~/ml/jobs/${PROJECT}_train_cpu.sh"
+if [ "$TYPE" == "ml" ]; then
+echo "  2. Enviar dados (do PC/WSL):"
+echo "     scp dados.csv deucalion:$PROJECT_DIR/datasets/"
 echo ""
-echo "  3. Ou GPU (recomendado para deep learning):"
-echo "     sbatch ~/ml/jobs/${PROJECT}_train_gpu.sh"
+echo "  3. Submeter job:"
+echo "     sbatch $PROJECT_DIR/jobs/train_cpu.sh"
+echo "     sbatch $PROJECT_DIR/jobs/train_gpu.sh"
+elif [ "$TYPE" == "simulation" ]; then
+echo "  2. Editar parâmetros:"
+echo "     nano $PROJECT_DIR/scripts/sim.py"
+echo ""
+echo "  3. Submeter job:"
+echo "     sbatch $PROJECT_DIR/jobs/sim_cpu.sh"
+fi
 echo ""
 echo "  4. Monitorizar:"
 echo "     squeue -u \$USER"
-echo "     tail -f ~/ml/logs/$PROJECT/*.out"
-echo ""
-echo "  5. Descarregar modelo (do teu PC/WSL):"
-echo "     scp -r deucalion:~/ml/models/$PROJECT/ ./"
-
-elif [ "$TYPE" == "simulation" ]; then
-echo "Script:"
-echo "  ~/ml/scripts/${PROJECT}_sim.py"
-echo ""
-echo "Job:"
-echo "  ~/ml/jobs/${PROJECT}_sim.sh"
-echo ""
-echo "Próximos passos:"
-echo ""
-echo "  1. Editar parâmetros da simulação:"
-echo "     nano ~/ml/scripts/${PROJECT}_sim.py"
-echo ""
-echo "  2. Submeter job:"
-echo "     sbatch ~/ml/jobs/${PROJECT}_sim.sh"
-echo ""
-echo "  3. Monitorizar:"
-echo "     squeue -u \$USER"
-echo "     tail -f ~/ml/logs/$PROJECT/*.out"
-echo ""
-echo "  4. Descarregar resultados (do teu PC/WSL):"
-echo "     scp -r deucalion:~/ml/results/$PROJECT/ ./"
-fi
+echo "     tail -f $PROJECT_DIR/logs/*.out"
 echo ""
