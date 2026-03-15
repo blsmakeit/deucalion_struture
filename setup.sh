@@ -78,17 +78,17 @@ WORKSPACE=$WORKSPACE
 REPO_DIR=$REPO_DIR
 EOF
 
-# --- 5. Criar symlink ~/ml ---
-if [ -L ~/ml ]; then
-    echo "Symlink ~/ml já existe — a atualizar..."
-    rm ~/ml
-elif [ -d ~/ml ]; then
-    echo "AVISO: ~/ml é uma pasta real, não um symlink. A renomear para ~/ml_backup..."
-    mv ~/ml ~/ml_backup
+# --- 5. Criar symlink ~/workshop ---
+if [ -L ~/workshop ]; then
+    echo "Symlink ~/workshop já existe — a atualizar..."
+    rm ~/workshop
+elif [ -d ~/workshop ]; then
+    echo "AVISO: ~/workshop é uma pasta real. A renomear para ~/workshop_backup..."
+    mv ~/workshop ~/workshop_backup
 fi
 
-ln -s "$WORKSPACE" ~/ml
-echo "Symlink criado: ~/ml → $WORKSPACE"
+ln -s "$WORKSPACE" ~/workshop
+echo "Symlink criado: ~/workshop → $WORKSPACE"
 
 # --- 6. Resumo ---
 echo ""
@@ -97,13 +97,13 @@ echo "  Setup completo!"
 echo "============================================="
 echo ""
 echo "  Workspace: $WORKSPACE"
-echo "  Atalho:    ~/ml"
+echo "  Atalho:    ~/workshop"
 echo ""
 echo "Para criar um projeto de treino de modelos:"
-echo "  cd ~/ml"
+echo "  cd ~/workshop"
 echo "  ./new_project.sh <nome> ml"
 echo ""
 echo "Para criar um projeto de simulação:"
-echo "  cd ~/ml"
+echo "  cd ~/workshop"
 echo "  ./new_project.sh <nome> simulation"
 echo ""
