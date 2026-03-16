@@ -1,0 +1,14 @@
+datasets/
+models/
+logs/
+results/
+venvs/
+__pycache__/
+*.pyc
+*.pkl
+*.pt
+*.pth
+*.h5
+*.tar.gz
+*.zip
+.env
