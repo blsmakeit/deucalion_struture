@@ -21,8 +21,8 @@ echo "  Início:     $(date)"
 echo "========================================="
 
 # Workspace e venv
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE="$(dirname "$SCRIPT_DIR")"
+WORKSPACE="/projects/F202500001INOVIAMAKEITTECH/$USER/deucalion-workshop/projects/iris_classification"
+
 VENV="$WORKSPACE/venvs/iris_classification"
 
 # Verificar que o venv existe
