@@ -44,6 +44,20 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$REPO_DIR/templates/$TYPE"
 PROJECT_DIR="$REPO_DIR/projects/$PROJECT"
 
+# --- Ler .config (criado pelo setup.sh) ---
+CONFIG_FILE="$REPO_DIR/.config"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    PID_LOWER=$(echo "$PROJECT_ID" | tr '[:upper:]' '[:lower:]')
+    SLURM_ACCOUNT_CPU="${PID_LOWER}x"
+    SLURM_ACCOUNT_GPU="${PID_LOWER}g"
+else
+    echo "AVISO: .config não encontrado — corre setup.sh primeiro"
+    echo "       Account SLURM ficará como placeholder nos jobs"
+    SLURM_ACCOUNT_CPU="DEUCALION_PROJECT_IDx"
+    SLURM_ACCOUNT_GPU="DEUCALION_PROJECT_IDg"
+fi
+
 # Verificar templates
 if [ ! -d "$TEMPLATE_DIR" ]; then
     echo "Erro: templates não encontrados em $TEMPLATE_DIR"
@@ -120,6 +134,7 @@ if [ "$TYPE" == "ml" ]; then
 
     cp "$TEMPLATE_DIR/train_template.py" "$PROJECT_DIR/scripts/train.py"
     cp "$TEMPLATE_DIR/infer_template.py" "$PROJECT_DIR/scripts/infer.py"
+    cp "$REPO_DIR/scripts/utils.py"      "$PROJECT_DIR/scripts/utils.py"
 
     for SCRIPT in "$PROJECT_DIR/scripts/train.py" "$PROJECT_DIR/scripts/infer.py"; do
         sed -i "s/PROJECT_NAME/$PROJECT/g"       "$SCRIPT"
@@ -134,15 +149,21 @@ if [ "$TYPE" == "ml" ]; then
         sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$JOB"
     done
 
+    sed -i "s/DEUCALION_PROJECT_IDx/$SLURM_ACCOUNT_CPU/g" "$PROJECT_DIR/jobs/train_cpu.sh"
+    sed -i "s/DEUCALION_PROJECT_IDg/$SLURM_ACCOUNT_GPU/g" "$PROJECT_DIR/jobs/train_gpu.sh"
+
 elif [ "$TYPE" == "simulation" ]; then
 
-    cp "$TEMPLATE_DIR/sim_template.py" "$PROJECT_DIR/scripts/sim.py"
+    cp "$TEMPLATE_DIR/sim_template.py"  "$PROJECT_DIR/scripts/sim.py"
+    cp "$REPO_DIR/scripts/utils.py"     "$PROJECT_DIR/scripts/utils.py"
+
     sed -i "s/PROJECT_NAME/$PROJECT/g"       "$PROJECT_DIR/scripts/sim.py"
     sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$PROJECT_DIR/scripts/sim.py"
 
     cp "$TEMPLATE_DIR/job_sim_cpu.sh" "$PROJECT_DIR/jobs/sim_cpu.sh"
     sed -i "s/PROJECT_NAME/$PROJECT/g"       "$PROJECT_DIR/jobs/sim_cpu.sh"
     sed -i "s|WORKSPACE_PATH|$PROJECT_DIR|g" "$PROJECT_DIR/jobs/sim_cpu.sh"
+    sed -i "s/DEUCALION_PROJECT_IDx/$SLURM_ACCOUNT_CPU/g" "$PROJECT_DIR/jobs/sim_cpu.sh"
 
 fi
 echo "      OK"

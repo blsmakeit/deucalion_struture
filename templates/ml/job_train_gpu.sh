@@ -48,7 +48,7 @@ echo ""
 
 # Correr treino
 cd "$WORKSPACE"
-python scripts/PROJECT_NAME_train.py
+python scripts/train.py
 
 echo ""
 echo "========================================="

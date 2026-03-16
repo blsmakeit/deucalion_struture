@@ -41,7 +41,7 @@ echo ""
 
 # Correr simulação
 cd "$WORKSPACE"
-python scripts/PROJECT_NAME_sim.py
+python scripts/sim.py
 
 echo ""
 echo "========================================="

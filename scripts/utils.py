@@ -19,14 +19,14 @@ def get_workspace() -> Path:
     """
     Retorna o caminho base do workspace — dinâmico para qualquer utilizador.
     Prioridade:
-      1. Symlink ~/ml (criado pelo setup.sh)
+      1. Symlink ~/workshop (criado pelo setup.sh)
       2. Variável de ambiente DEUCALION_WORKSPACE
       3. Construção automática a partir de $USER
     """
-    # 1. Symlink ~/ml
-    ml_link = Path.home() / 'ml'
-    if ml_link.is_symlink() and ml_link.exists():
-        return ml_link.resolve()
+    # 1. Symlink ~/workshop
+    workshop_link = Path.home() / 'workshop'
+    if workshop_link.is_symlink() and workshop_link.exists():
+        return workshop_link.resolve()
 
     # 2. Variável de ambiente
     ws = os.environ.get('DEUCALION_WORKSPACE')
@@ -41,7 +41,7 @@ def get_workspace() -> Path:
     projects_base = Path('/projects')
     if projects_base.exists():
         for proj_dir in projects_base.iterdir():
-            candidate = proj_dir / user / 'ml_workspace'
+            candidate = proj_dir / user / 'deucalion-workshop'
             if candidate.exists():
                 return candidate
 
