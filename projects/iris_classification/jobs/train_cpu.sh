@@ -7,8 +7,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
-#SBATCH --output=/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification/logs/%j_train_cpu.out
-#SBATCH --error=/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification/logs/%j_train_cpu.err
+#SBATCH --output=/projects/F202500001INOVIAMAKEITTECH/%u/deucalion-workshop/projects/iris_classification/logs/%j_train_cpu.out
+#SBATCH --error=/projects/F202500001INOVIAMAKEITTECH/%u/deucalion-workshop/projects/iris_classification/logs/%j_train_cpu.err
 
 echo "========================================="
 echo "  Projeto:    iris_classification"
@@ -21,7 +21,8 @@ echo "  Início:     $(date)"
 echo "========================================="
 
 # Workspace e venv
-WORKSPACE="/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE="$(dirname "$SCRIPT_DIR")"
 VENV="$WORKSPACE/venvs/iris_classification"
 
 # Verificar que o venv existe

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=iris_classification_gpu
-#SBATCH --account=DEUCALION_PROJECT_IDg
+#SBATCH --account=f202500001inoviamakeittechg
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -8,8 +8,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
-#SBATCH --output=/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification/logs/iris_classification/%j_train_gpu.out
-#SBATCH --error=/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification/logs/iris_classification/%j_train_gpu.err
+#SBATCH --output=/projects/F202500001INOVIAMAKEITTECH/%u/deucalion-workshop/projects/iris_classification/logs/%j_train_gpu.out
+#SBATCH --error=/projects/F202500001INOVIAMAKEITTECH/%u/deucalion-workshop/projects/iris_classification/logs/%j_train_gpu.err
 
 echo "========================================="
 echo "  Projeto:    iris_classification"
@@ -22,7 +22,8 @@ echo "  Início:     $(date)"
 echo "========================================="
 
 # Workspace e venv
-WORKSPACE="/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE="$(dirname "$SCRIPT_DIR")"
 VENV="$WORKSPACE/venvs/iris_classification"
 
 # Verificar que o venv existe
@@ -48,7 +49,7 @@ echo ""
 
 # Correr treino
 cd "$WORKSPACE"
-python scripts/iris_classification_train.py
+python scripts/train.py
 
 echo ""
 echo "========================================="

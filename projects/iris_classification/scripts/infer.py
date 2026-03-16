@@ -8,7 +8,7 @@ Edita as secções marcadas com TODO conforme o teu projeto.
 import sys
 import os
 
-sys.path.append('/projects/F202500001INOVIAMAKEITTECH/brunosousa/deucalion-workshop/projects/iris_classification/scripts')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts'))
 from utils import get_paths, load_model, save_results, print_project_info
 
 import pandas as pd
